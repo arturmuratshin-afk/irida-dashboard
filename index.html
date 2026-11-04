@@ -210,7 +210,7 @@
   </div>
 
   <div class="card plain">
-    <div class="k">Стены</div>
+    <div class="k">Стены по открытому интересу</div>
     <table id="oWalls"></table>
   </div>
 
@@ -712,7 +712,7 @@ async function loadOI(onNote){
   const [js, jm] = await Promise.all([
     iss("/iss/engines/futures/markets/options/boards/ROPD/securities.json",
         {"iss.only": "securities", "iss.meta": "off",
-         "securities.columns": "SECID,ASSETCODE,STRIKE,OPTIONTYPE,LASTTRADEDATE"}),
+         "securities.columns": "SECID,ASSETCODE,SHORTNAME,STRIKE,OPTIONTYPE,LASTTRADEDATE"}),
     iss("/iss/engines/futures/markets/options/boards/ROPD/securities.json",
         {"iss.only": "marketdata", "iss.meta": "off",
          "marketdata.columns": "SECID,OPENPOSITION"}),
@@ -726,6 +726,11 @@ async function loadOI(onNote){
     if (!ac || !ONLY.includes(ac)) return;
     const exp = r[ci.LASTTRADEDATE];
     if (!exp) return;
+    // под одним кодом лежат опционы на акцию и на фьючерс:
+    //   SBERP111126CE290      — на акцию
+    //   SBRF-12.26M111126CA29000 — на фьючерс (в имени дефис)
+    const nm = String(r[ci.SHORTNAME] || "");
+    if (nm.includes("-")) return;
     rows.push([r[ci.SECID], ac, +r[ci.STRIKE] || 0, r[ci.OPTIONTYPE], exp]);
   });
 
@@ -952,7 +957,7 @@ async function loadSignals(){
           (by[side] || [])
             .filter(w => w.oi >= 1000 && w.k >= price * 0.85 && w.k <= price * 1.15)
             .sort((a, b) => b.oi - a.oi).slice(0, 1).forEach(w => {
-              add(w.k, "стена " + (side === "C" ? "call" : "put"), 3);
+              add(w.k, "стена " + (side === "C" ? "call" : "put") + " (OI)", 3);
             });
         });
       }
