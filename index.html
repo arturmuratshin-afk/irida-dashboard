@@ -1043,8 +1043,21 @@ document.querySelectorAll(".nav button").forEach(b =>
 // ---------------------------------------------------------------- запуск
 let current = "week";
 
+async function loadQuotes(){
+  try {
+    const r = await fetch("quotes.json?ts=" + Date.now());
+    if (!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
+}
+
 async function loadFut(){
   const FUT = (TICKERS[cur] || {}).fut || "SRZ6";
+  const lv = window.__live;
+  if (lv && lv.future) {
+    $("fut").textContent = FUT + " " + Math.round(lv.future);
+    return;
+  }
   try {
     const wf = await candles(FUT,"RFUD","forts",24,10,"futures");
     $("fut").textContent = wf.length
@@ -1062,12 +1075,43 @@ async function load(tf, force){
     const cfg = TF[tf];
     const key = cur + "-" + cfg.iv + "-" + cfg.days;
     if (force || !cache[key]) cache[key] = await candles(cur,"TQBR","shares",cfg.iv,cfg.days);
-    render(analyze(tf, cache[key]));
+
+    // живые котировки из T-Invest (публикуются скриптом раз в 10 минут)
+    const bars = cache[key];
+    const q = await loadQuotes();
+    if (q && q.quotes && q.quotes[cur] && q.quotes[cur].price) {
+      const item = q.quotes[cur];
+      const liveTs = item.time || "";
+      const last = bars[bars.length - 1];
+      const lastTs = (last && last.begin) ? last.begin.slice(0, 16) : "";
+      if (liveTs && liveTs > lastTs) {
+        bars.push({begin: liveTs + ":00", open: +last.close,
+                   high: Math.max(+last.close, item.price),
+                   low: Math.min(+last.close, item.price),
+                   close: item.price, volume: 0});
+      } else if (last) {
+        last.close = item.price;
+      }
+      window.__live = {price: item.price, time: liveTs,
+                       source: item.source, future: item.future,
+                       sync: q.sync, desync: q.desync_minutes};
+    } else {
+      window.__live = null;
+    }
+
+    render(analyze(tf, bars));
   } catch (e) {
     $("sub").textContent = "ошибка: " + e.message;
   }
-  $("stamp").textContent = new Date().toLocaleTimeString("ru-RU",
-    {hour:"2-digit", minute:"2-digit"}) + " МСК";
+  const lv = window.__live;
+  if (lv && lv.time) {
+    $("stamp").textContent = (lv.source || "") + " " + lv.time.slice(11, 16);
+    $("stamp").title = lv.sync === "desync"
+      ? "данные несинхронны: разрыв " + lv.desync + " мин" : "данные синхронны";
+  } else {
+    $("stamp").textContent = new Date().toLocaleTimeString("ru-RU",
+      {hour:"2-digit", minute:"2-digit"}) + " МСК";
+  }
   loadFut();
 }
 
