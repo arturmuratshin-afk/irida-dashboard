@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ИРИДА · Анализ</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#ffffff; --bg2:#f6f7f8; --fg:#111315; --hint:#7b8189;
+    --line:#e6e8eb; --accent:#111315; --up:#1a7f4b; --down:#b3261e;
+    --bar:#dfe3e8; --bar2:#b9c0c8;
+  }
+  @media (prefers-color-scheme: dark){
+    html:not([data-theme="light"]){
+      --bg:#111315; --bg2:#181b1e; --fg:#f2f4f6; --hint:#8b929a;
+      --line:#252a2f; --accent:#f2f4f6; --up:#4ec27f; --down:#ff6b60;
+      --bar:#272c31; --bar2:#3a424a;
+    }
+  }
+  html[data-theme="dark"]{
+    --bg:#111315; --bg2:#181b1e; --fg:#f2f4f6; --hint:#8b929a;
+    --line:#252a2f; --accent:#f2f4f6; --up:#4ec27f; --down:#ff6b60;
+    --bar:#272c31; --bar2:#3a424a;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{overflow-x:hidden; max-width:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;
+    font-variant-numeric:tabular-nums; padding:0 0 74px;
+  }
+  .wrap{padding:14px 16px 0; width:100%; max-width:520px; margin:0 auto}
+  .row{display:flex; align-items:baseline; justify-content:space-between; gap:8px;
+       flex-wrap:wrap; min-width:0}
+  .row > *{min-width:0}
+  .h1{font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--hint)}
+  .muted{color:var(--hint); font-size:12.5px}
+  .big{font-size:30px; font-weight:600; letter-spacing:-.02em}
+  .chg{font-size:14px; font-weight:500}
+  .up{color:var(--up)} .down{color:var(--down)}
+
+  .tabs{display:flex; gap:4px; margin-top:14px; border-bottom:1px solid var(--line)}
+  .tabs button{
+    flex:1; background:none; border:none; color:var(--hint);
+    font:inherit; font-size:11.5px; letter-spacing:.07em; text-transform:uppercase;
+    padding:9px 2px 8px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
+  }
+  .tabs button.on{color:var(--fg); border-bottom-color:var(--fg); font-weight:600}
+
+  .card{background:var(--bg2); border-radius:14px; padding:14px; margin-top:12px}
+  .card.plain{background:transparent; padding:0; margin-top:20px}
+  .k{font-size:11.5px; color:var(--hint); letter-spacing:.04em; text-transform:uppercase}
+  .verdict{font-size:13.5px; line-height:1.4; margin-top:10px}
+  .tag{display:inline-block; font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+       border:1px solid var(--line); border-radius:999px; padding:3px 9px; color:var(--hint);
+       white-space:nowrap}
+  svg{display:block; width:100%; height:auto}
+  .bars{display:flex; align-items:flex-end; gap:5px; height:76px; margin-top:18px; min-width:0}
+  .b{flex:1 1 0; min-width:0; display:flex; flex-direction:column; justify-content:flex-end;
+     gap:5px; text-align:center}
+  .b i{display:block; background:var(--bar); border-radius:3px 3px 0 0; min-height:3px}
+  .b i.hot{background:var(--bar2)}
+  .b span{font-size:9.5px; color:var(--hint); overflow:hidden; white-space:nowrap; line-height:1.2}
+  table{width:100%; border-collapse:collapse; font-size:13.5px}
+  td{padding:7px 0; border-bottom:1px solid var(--line)}
+  td:last-child{text-align:right}
+  tr:last-child td{border-bottom:none}
+  .prof{overflow:hidden; margin-top:10px}
+  .pline{display:flex; align-items:center; gap:8px; height:15px; margin-bottom:2px}
+  .pline .lb{width:46px; flex:0 0 46px; font-size:10.5px; color:var(--hint); text-align:right}
+  .pline .tr{flex:1 1 auto; min-width:0; height:9px; overflow:hidden}
+  .pline .fl{height:9px; background:var(--bar); border-radius:2px}
+  .pline.poc .fl{background:var(--accent)}
+  .pline.poc .lb{color:var(--fg); font-weight:600}
+
+  /* опционная доска */
+  .ostrike{display:flex; align-items:center; gap:6px; height:23px; margin-bottom:1px; font-size:11px}
+  .ostrike .side{flex:1 1 0; min-width:0; display:flex; align-items:center; height:13px}
+  .ostrike .side.c{justify-content:flex-start}
+  .ostrike .side.p{justify-content:flex-end}
+  .ostrike .side i{display:block; height:13px; border-radius:2px}
+  .ostrike .side.c i{background:var(--accent); opacity:.85}
+  .ostrike .side.p i{background:var(--bar2)}
+  .ostrike .st{flex:0 0 44px; text-align:center; color:var(--hint); font-size:10.5px}
+  .ostrike.atm .st{color:var(--fg); font-weight:700}
+  .ostrike.atm{background:color-mix(in srgb,var(--fg) 7%,transparent); border-radius:4px}
+  .olegend{display:flex; justify-content:space-between; margin-top:8px; font-size:10.5px; color:var(--hint)}
+
+  /* настройки */
+  .field{display:flex; align-items:center; justify-content:space-between; gap:10px;
+         padding:11px 0; border-bottom:1px solid var(--line)}
+  .field:last-child{border-bottom:none}
+  .field label{font-size:14px}
+  .field .hint{font-size:11.5px; color:var(--hint); margin-top:2px}
+  .field input{
+    width:82px; text-align:right; font:inherit; font-size:15px; font-variant-numeric:tabular-nums;
+    background:var(--bg2); color:var(--fg); border:1px solid var(--line);
+    border-radius:9px; padding:7px 10px;
+  }
+  .field input:focus{outline:none; border-color:var(--fg)}
+  .btn{display:block; width:100%; margin-top:16px; padding:13px;
+       background:var(--fg); color:var(--bg); border:none; border-radius:12px;
+       font:inherit; font-size:14px; font-weight:600; letter-spacing:.02em; cursor:pointer}
+  .btn:active{opacity:.8}
+  .note{font-size:12px; color:var(--hint); margin-top:10px; line-height:1.45}
+
+  .nav{position:fixed; bottom:0; left:0; right:0; z-index:5;
+       background:color-mix(in srgb,var(--bg) 94%,transparent);
+       backdrop-filter:blur(14px); border-top:1px solid var(--line);
+       display:flex; padding:7px 0 9px}
+  .nav button{flex:1; background:none; border:none; color:var(--hint); font:inherit;
+              font-size:10.5px; letter-spacing:.03em; padding:4px 0; cursor:pointer}
+  .nav button.on{color:var(--fg); font-weight:600}
+  .nav b{display:block; font-size:15px; font-weight:400; margin-bottom:2px; opacity:.75}
+  .nav button.on b{opacity:1}
+  .err{color:var(--down); font-size:13px; margin-top:10px}
+</style>
+</head>
+<body>
+
+<!-- ============================ ОБЗОР ============================ -->
+<div class="wrap" id="scr-overview">
+  <div class="row">
+    <span class="h1" id="title">ИРИДА · НЕДЕЛЯ</span>
+    <span class="muted" id="stamp">—</span>
+  </div>
+
+  <div class="row" style="margin-top:8px">
+    <div>
+      <div class="big" id="px">—</div>
+      <div class="muted" id="sub">загрузка…</div>
+    </div>
+    <div style="text-align:right">
+      <div class="chg" id="chg">—</div>
+      <div class="muted" id="fut">—</div>
+    </div>
+  </div>
+
+  <div class="tabs" id="ttabs">
+    <button data-t="SBER" class="on">SBER</button>
+    <button data-t="GAZP">GAZP</button>
+    <button data-t="ROSN">ROSN</button>
+    <button data-t="VTBR">VTBR</button>
+    <button data-t="T">T</button>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button data-tf="hour">Час</button>
+    <button data-tf="day">День</button>
+    <button data-tf="week" class="on">Неделя</button>
+    <button data-tf="month">Месяц</button>
+  </div>
+
+  <svg id="spark" viewBox="0 0 480 118" preserveAspectRatio="none" style="margin-top:12px"></svg>
+
+  <div class="card">
+    <div class="row"><span class="k" id="volLabel">Объём недели</span>
+      <span class="tag" id="volTag">—</span></div>
+    <div class="row" style="margin-top:6px; align-items:flex-end">
+      <span class="big" style="font-size:24px" id="volNow">—</span>
+      <span class="muted" id="volPrev">—</span>
+    </div>
+    <div class="verdict" id="verdict">—</div>
+  </div>
+
+  <div class="card plain">
+    <div class="k" id="barsLabel">Объём по дням</div>
+    <div class="bars" id="dayBars"></div>
+    <div class="muted" style="margin-top:6px" id="dayNote"></div>
+  </div>
+
+  <div class="card plain">
+    <div class="k" id="profLabel">Профиль недели</div>
+    <div class="prof" id="prof"></div>
+    <div class="muted" style="margin-top:8px" id="profNote"></div>
+  </div>
+
+  <div class="card plain">
+    <div class="k">Уровни</div>
+    <table id="levels"></table>
+  </div>
+
+  <div class="muted" style="margin:18px 0 6px; text-align:center">Не инвестиционная рекомендация</div>
+</div>
+
+<!-- ============================ ОПЦИОНЫ ============================ -->
+<div class="wrap" id="scr-options" hidden>
+  <div class="row">
+    <span class="h1" id="optTitle">ОПЦИОНЫ</span>
+    <span class="muted" id="optStamp">—</span>
+  </div>
+
+  <div class="tabs" id="expTabs"></div>
+
+  <div class="card">
+    <div class="row">
+      <div><div class="k">PCR</div><div class="v" id="oPcr" style="font-size:20px;font-weight:600">—</div></div>
+      <div style="text-align:right"><div class="k">Max Pain</div>
+        <div class="v" id="oMp" style="font-size:20px;font-weight:600">—</div></div>
+    </div>
+    <div class="verdict" id="oVerdict">—</div>
+  </div>
+
+  <div class="card plain">
+    <div class="k">Страйки · открытый интерес</div>
+    <div id="oTable" style="margin-top:10px"></div>
+    <div class="olegend"><span>путы ←</span><span>→ коллы</span></div>
+    <div class="muted" style="margin-top:8px" id="oNote"></div>
+  </div>
+
+  <div class="card plain">
+    <div class="k">Стены</div>
+    <table id="oWalls"></table>
+  </div>
+
+  <div class="muted" style="margin:18px 0 6px; text-align:center">Не инвестиционная рекомендация</div>
+</div>
+
+<!-- ============================ НАСТРОЙКИ ============================ -->
+<div class="wrap" id="scr-settings" hidden>
+  <div class="row"><span class="h1">НАСТРОЙКИ</span></div>
+
+  <div class="card">
+    <div class="k" style="margin-bottom:10px">Бумаги в обзоре</div>
+    <div class="tabs" id="setTickers">
+      <button data-t="SBER">SBER</button>
+      <button data-t="GAZP">GAZP</button>
+      <button data-t="ROSN">ROSN</button>
+      <button data-t="VTBR">VTBR</button>
+      <button data-t="T">T</button>
+    </div>
+    <div class="hint" style="margin-top:10px">
+      Снимите выбор, чтобы убрать бумагу из верхнего меню.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <div><label>Режим объяснения</label><div class="hint">сколько пояснений в разборе</div></div>
+      <select id="setMode" style="width:120px;padding:8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:inherit">
+        <option value="simple">Просто</option>
+        <option value="pro">Про</option>
+      </select>
+    </div>
+    <div class="field">
+      <div><label>Порог движения</label><div class="hint">% за сессию для отметки «резкое»</div></div>
+      <input id="setMove" type="number" step="0.1" min="0.3" max="10" value="2">
+    </div>
+    <div class="field">
+      <div><label>Горизонт по умолчанию</label><div class="hint">с какого периода открывать</div></div>
+      <select id="setTf" style="width:120px;padding:8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:inherit">
+        <option value="day">День</option>
+        <option value="week">Неделя</option>
+        <option value="month">Месяц</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="btn" id="saveBtn">Сохранить</button>
+  <div class="note" id="setNote">
+    Настройки хранятся в этом приложении. Утренняя сводка приходит
+    в боте в 09:00 по будням — её расписание задаётся там же.
+  </div>
+
+  <div class="card plain">
+    <div class="k">Что приходит в боте</div>
+    <table>
+      <tr><td>Утренняя сводка</td><td>09:00, пн–пт</td></tr>
+      <tr><td>Разбор через AI</td><td>по кнопке</td></tr>
+      <tr><td>Паспорт вывода</td><td>под каждым разбором</td></tr>
+      <tr><td>История сценариев</td><td>по кнопке</td></tr>
+    </table>
+  </div>
+
+  <div class="card plain">
+    <div class="k">Данные</div>
+    <table>
+      <tr><td>Цены и объёмы</td><td>MOEX ISS</td></tr>
+      <tr><td>Гамма и открытый интерес</td><td>option-calc, ROPD</td></tr>
+      <tr><td>Задержка</td><td>15 минут, как у биржи</td></tr>
+    </table>
+  </div>
+
+  <div class="muted" style="margin:18px 0 6px; text-align:center">Не инвестиционная рекомендация</div>
+</div>
+
+<!-- ============================ СИГНАЛЫ ============================ -->
+<div class="wrap" id="scr-signals" hidden>
+  <div class="row">
+    <span class="h1" id="sigTitle">СИГНАЛЫ</span>
+    <span class="muted" id="sigStamp">—</span>
+  </div>
+
+  <div class="card" id="sigHead">
+    <div class="row">
+      <div><div class="k">Цена</div>
+        <div id="sigPrice" style="font-size:22px;font-weight:600">—</div></div>
+      <div style="text-align:right"><div class="k">ATR</div>
+        <div id="sigAtr" style="font-size:16px">—</div></div>
+    </div>
+    <div class="verdict" id="sigState">—</div>
+  </div>
+
+  <div class="card plain">
+    <div class="k">Ближайшие уровни</div>
+    <div id="sigList" style="margin-top:10px"></div>
+    <div class="muted" id="sigNote" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card plain">
+    <div class="k">Все уровни</div>
+    <table id="sigAll"></table>
+  </div>
+
+  <div class="note" style="margin-top:14px">
+    Давление по тикам и абсорбция считаются только в терминале — там есть
+    локальные данные сборщика. Здесь объём, уровни и расчёт стопа с целью.
+  </div>
+
+  <div class="muted" style="margin:18px 0 6px; text-align:center">Не инвестиционная рекомендация</div>
+</div>
+
+<nav class="nav">
+  <button data-scr="overview" class="on"><b>◧</b>Обзор</button>
+  <button data-scr="signals"><b>⌁</b>Сигналы</button>
+  <button data-scr="options"><b>≡</b>Опционы</button>
+  <button data-scr="settings"><b>⚙</b>Настройки</button>
+</nav>
+
+<script>
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) {
+  tg.ready(); tg.expand();
+  if (tg.colorScheme === "dark") document.documentElement.dataset.theme = "dark";
+  try { tg.setHeaderColor("secondary_bg_color"); tg.setBackgroundColor("bg_color"); } catch(e){}
+}
+const $ = id => document.getElementById(id);
+const BOT = "irida_market_bot";
+
+// ---------------------------------------------------------------- конфиг
+// бумаги Ириды
+const TICKERS = {
+  SBER: {code:"SBER", opt:"SBRF", fut:"SRZ6", name:"Сбер"},
+  GAZP: {code:"GAZP", opt:"GAZR", fut:"GZZ6", name:"Газпром"},
+  ROSN: {code:"ROSN", opt:"ROSN", fut:"RNZ6", name:"Роснефть"},
+  VTBR: {code:"VTBR", opt:"VTBR", fut:"VBZ6", name:"ВТБ"},
+  T:    {code:"T",    opt:"T",    fut:"TBZ6", name:"Т-Техно"},
+};
+let cur = "SBER";
+
+const TF = {
+  hour:  { title:"ЧАС",   volLabel:"Объём часа",    barsLabel:"Объём по 5 минутам",
+           profLabel:"Профиль часа",    iv:1,  days:2,  step:0.05 },
+  day:   { title:"ДЕНЬ",  volLabel:"Объём дня",     barsLabel:"Объём по часам",
+           profLabel:"Профиль дня",     iv:10, days:4,  step:0.25 },
+  week:  { title:"НЕДЕЛЯ",volLabel:"Объём недели",  barsLabel:"Объём по дням",
+           profLabel:"Профиль недели",  iv:10, days:17, step:0.25 },
+  month: { title:"МЕСЯЦ", volLabel:"Объём месяца",  barsLabel:"Объём по неделям",
+           profLabel:"Профиль месяца",  iv:60, days:75, step:0.5 },
+};
+const MONTHS = ["январь","февраль","март","апрель","май","июнь","июль","август",
+                "сентябрь","октябрь","ноябрь","декабрь"];
+const WD = ["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
+const cache = {};
+
+// ---------------------------------------------------------------- запросы
+async function iss(path, params) {
+  const u = new URL("https://iss.moex.com" + path);
+  Object.entries(params).forEach(([k, v]) => u.searchParams.set(k, v));
+  u.searchParams.set("iss.meta", "off");
+  const r = await fetch(u.toString());
+  if (!r.ok) throw new Error("биржа " + r.status);
+  return r.json();
+}
+async function candles(secid, board, market, interval, days, engine = "stock") {
+  const from = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
+  const path = `/iss/engines/${engine}/markets/${market}/boards/${board}/securities/${secid}/candles.json`;
+  let out = [], start = 0;
+  for (let i = 0; i < 12; i++) {
+    const j = await iss(path, { interval, from, start });
+    const c = j.candles || {};
+    const cols = c.columns || [], data = c.data || [];
+    if (!data.length) break;
+    data.forEach(x => { const o = {}; cols.forEach((k, n) => o[k] = x[n]); out.push(o); });
+    start += data.length;
+    if (data.length < 500) break;
+  }
+  return out.sort((a, b) => a.begin < b.begin ? -1 : 1);
+}
+
+// ---------------------------------------------------------------- утилиты
+function P(ts){
+  return {y:+ts.slice(0,4), m:+ts.slice(5,7), d:+ts.slice(8,10),
+          hh:+ts.slice(11,13), mm:+ts.slice(14,16), date:ts.slice(0,10)};
+}
+function isoWeek(ts){
+  const p = P(ts);
+  const t = new Date(Date.UTC(p.y, p.m-1, p.d));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return t.getUTCFullYear() + "-" + String(Math.ceil(((t - y0)/864e5 + 1)/7)).padStart(2,"0");
+}
+const MON = b => b.begin.slice(0,7);
+const DAY = b => b.begin.slice(0,10);
+const HOUR = b => b.begin.slice(0,13);
+const FIVE = b => b.begin.slice(0,13) + ":" + String(Math.floor(+b.begin.slice(14,16)/5)*5).padStart(2,"0");
+
+function periodKey(tf, b){
+  if (tf === "hour") return HOUR(b);
+  if (tf === "day") return DAY(b);
+  if (tf === "week") return isoWeek(b.begin);
+  return MON(b);
+}
+function bucketKey(tf, b){
+  if (tf === "hour") return FIVE(b);
+  if (tf === "day") return HOUR(b);
+  if (tf === "week") return DAY(b);
+  const p = P(b.begin);
+  return "н" + Math.min(5, Math.ceil(p.d/7));
+}
+function bucketRel(tf, b){
+  const p = P(b.begin);
+  if (tf === "hour") return String(Math.floor(p.mm/5));
+  if (tf === "day") return String(p.hh);
+  if (tf === "week") return String((new Date(Date.UTC(p.y,p.m-1,p.d)).getUTCDay()+6)%7);
+  return String(Math.min(5, Math.ceil(p.d/7)));
+}
+function bucketName(tf, key, b){
+  if (tf === "hour") return key.slice(11,16);
+  if (tf === "day") return key.slice(11,13) + ":00";
+  if (tf === "week") { const p = P(b.begin); return WD[new Date(Date.UTC(p.y,p.m-1,p.d)).getUTCDay()]; }
+  return key;
+}
+function periodLabel(tf, bars){
+  if (!bars.length) return "—";
+  const a = bars[0], z = bars[bars.length-1];
+  if (tf === "hour") return "час " + a.begin.slice(11,16) + "–" + z.begin.slice(11,16) +
+    " · " + P(a.begin).d + "." + String(P(a.begin).m).padStart(2,"0");
+  if (tf === "day") { const p = P(a.begin);
+    return WD[new Date(Date.UTC(p.y,p.m-1,p.d)).getUTCDay()] + " " +
+      String(p.d).padStart(2,"0") + "." + String(p.m).padStart(2,"0"); }
+  if (tf === "week") { const p1 = P(a.begin), p2 = P(z.begin);
+    return p1.d + "." + p1.m + " – " + p2.d + "." + p2.m; }
+  const p = P(a.begin);
+  return MONTHS[p.m-1] + " " + p.y;
+}
+function profile(bars, step){
+  const map = new Map();
+  bars.forEach(b => {
+    const v = +b.volume || 0; if (v <= 0) return;
+    const tp = (+b.high + +b.low + +b.close) / 3;
+    const k = +(Math.round(tp/step)*step).toFixed(2);
+    map.set(k, (map.get(k) || 0) + v);
+  });
+  if (!map.size) return null;
+  const keys = [...map.keys()].sort((a,b)=>a-b);
+  const total = [...map.values()].reduce((a,b)=>a+b,0);
+  let poc = keys[0];
+  keys.forEach(k => { if (map.get(k) > map.get(poc)) poc = k; });
+  let lo = keys.indexOf(poc), hi = lo, acc = map.get(poc);
+  while (acc < total*0.7 && (lo > 0 || hi < keys.length-1)) {
+    const l = lo > 0 ? map.get(keys[lo-1]) : -1;
+    const r = hi < keys.length-1 ? map.get(keys[hi+1]) : -1;
+    if (r >= l) { hi++; acc += map.get(keys[hi]); } else { lo--; acc += map.get(keys[lo]); }
+  }
+  return {map, keys, poc, val: keys[lo], vah: keys[hi], total};
+}
+const mln = x => (x/1e6).toFixed(1);
+const volFmt = x => x >= 1e6 ? (x/1e6).toFixed(1) + " млн" : Math.round(x/1e3) + " тыс";
+const volShort = x => x >= 1e6 ? (x/1e6).toFixed(1) : Math.round(x/1e3) + "к";
+const f2 = x => x.toFixed(2);
+const num = x => Math.round(x).toLocaleString("ru-RU");
+
+// ---------------------------------------------------------------- график
+function drawSpark(bars, prof){
+  const svg = $("spark");
+  if (!bars.length) { svg.innerHTML = ""; return; }
+  const W = 480, H = 118, pad = 6;
+  const ys = bars.map(b => +b.close);
+  const hi = Math.max(...ys), lo = Math.min(...ys), span = (hi-lo)||1;
+  const X = i => pad + i*(W-pad*2)/(bars.length-1);
+  const Y = v => pad + (hi-v)/span*(H-pad*2);
+  const d = ys.map((v,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
+  let g = "";
+  if (prof) {
+    const yT = Y(prof.vah), yB = Y(prof.val);
+    g += `<rect x="0" y="${Math.min(yT,yB).toFixed(1)}" width="${W}" height="${Math.abs(yB-yT).toFixed(1)}" fill="currentColor" opacity="0.06"/>`;
+    const yp = Y(prof.poc).toFixed(1);
+    g += `<line x1="0" x2="${W}" y1="${yp}" y2="${yp}" stroke="currentColor" stroke-opacity=".3" stroke-dasharray="3 3" stroke-width="1"/>`;
+  }
+  svg.innerHTML = g +
+    `<path d="${d}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>` +
+    `<circle cx="${X(ys.length-1).toFixed(1)}" cy="${Y(ys[ys.length-1]).toFixed(1)}" r="2.6" fill="currentColor"/>`;
+}
+
+// ---------------------------------------------------------------- расчёт периода
+function analyze(tf, small){
+  const cfg = TF[tf];
+  if (!small.length) throw new Error("нет данных");
+
+  const periods = new Map();
+  small.forEach(b => {
+    const k = periodKey(tf, b);
+    if (!periods.has(k)) periods.set(k, []);
+    periods.get(k).push(b);
+  });
+  const keys = [...periods.keys()].sort();
+  if (keys.length < 2) throw new Error("мало истории");
+
+  const cur = periods.get(keys[keys.length-1]);
+  const prev = periods.get(keys[keys.length-2]);
+
+  const bk = new Map();
+  cur.forEach(b => {
+    const k = bucketKey(tf, b);
+    if (!bk.has(k)) bk.set(k, {vol:0, sample:b, rel:bucketRel(tf, b)});
+    bk.get(k).vol += +b.volume || 0;
+  });
+  const buckets = [...bk.entries()].map(([k, v]) => ({key:k, ...v}))
+    .sort((a,b)=> a.key < b.key ? -1 : 1);
+
+  const pbk = new Map();
+  prev.forEach(b => {
+    const k = bucketRel(tf, b);
+    pbk.set(k, (pbk.get(k)||0) + (+b.volume || 0));
+  });
+  const prevSame = buckets.map(x => x.rel).filter(k => pbk.has(k)).reduce((s,k)=> s+pbk.get(k), 0);
+
+  const curVol = cur.reduce((s,b)=> s + (+b.volume||0), 0);
+  const prevVol = prev.reduce((s,b)=> s + (+b.volume||0), 0);
+  const complete = buckets.filter(x => pbk.has(x.rel)).length;
+
+  const o = +cur[0].open, c = +cur[cur.length-1].close;
+  const hi = Math.max(...cur.map(b=>+b.high));
+  const lo = Math.min(...cur.map(b=>+b.low));
+  const chg = o ? (c/o-1)*100 : 0;
+  const pos = hi > lo ? (c-lo)/(hi-lo)*100 : 50;
+  const prof = profile(cur, cfg.step);
+
+  let above = 0, below = 0, pAbove = 0, pBelow = 0;
+  if (hi > lo) {
+    const third = (hi-lo)/3;
+    cur.forEach(b => {
+      const v = +b.volume||0; if (v<=0) return;
+      const tp = (+b.high + +b.low + +b.close)/3;
+      if (tp >= hi-third) above += v; else if (tp <= lo+third) below += v;
+    });
+  }
+  const phi = Math.max(...prev.map(b=>+b.high)), plo = Math.min(...prev.map(b=>+b.low));
+  if (phi > plo) {
+    const t3 = (phi-plo)/3;
+    prev.forEach(b => {
+      const v = +b.volume||0; if (v<=0) return;
+      const tp = (+b.high + +b.low + +b.close)/3;
+      if (tp >= phi-t3) pAbove += v; else if (tp <= plo+t3) pBelow += v;
+    });
+  }
+
+  const share = above+below ? above/(above+below)*100 : null;
+  const pshare = pAbove+pBelow ? pAbove/(pAbove+pBelow)*100 : null;
+  const volRatio = prevSame ? curVol/prevSame*100 : (prevVol ? curVol/prevVol*100 : 0);
+  const word = volRatio >= 110 ? "растёт" : volRatio >= 90 ? "стабилен" : "падает";
+
+  let verdict;
+  if (chg > 0.3 && volRatio >= 105) verdict = "Рост подтверждён объёмом.";
+  else if (chg > 0.3 && volRatio < 95) verdict = "Рост на слабом объёме — покупатели не поддерживают движение.";
+  else if (chg < -0.3 && volRatio >= 105) verdict = "Падение с объёмом — продают.";
+  else if (chg < -0.3) verdict = "Падение на низком объёме.";
+  else verdict = "Боковик, объём " + word + ".";
+
+  if (pshare !== null && share !== null) {
+    const d = share - pshare;
+    if (Math.abs(d) < 5) verdict += " Объём на хаях не меняется — подтверждения нет.";
+    else if (d >= 5) verdict += " Объём смещается к верхам — покупатели держат.";
+    else verdict += " Объём уходит от верхов — рост без поддержки.";
+  }
+
+  return {tf, cur, buckets, curVol, prevVol, prevSame, complete, total: buckets.length,
+          chg, hi, lo, c, pos, prof, share, pshare, word, verdict,
+          label: periodLabel(tf, cur)};
+}
+
+// ---------------------------------------------------------------- отрисовка периода
+function render(r){
+  const cfg = TF[r.tf];
+  $("title").textContent = "ИРИДА · " + cur + " · " + cfg.title;
+  $("volLabel").textContent = cfg.volLabel;
+  $("barsLabel").textContent = cfg.barsLabel;
+  $("profLabel").textContent = cfg.profLabel;
+
+  $("px").textContent = f2(r.c);
+  $("chg").textContent = (r.chg>=0?"+":"") + r.chg.toFixed(2) + "%";
+  $("chg").className = "chg " + (r.chg>=0?"up":"down");
+  $("sub").textContent = r.label;
+
+  $("volNow").textContent = volFmt(r.curVol);
+  $("volPrev").textContent = "прошлый " + volFmt(r.prevVol) + " · " + Math.round(r.volRatio ?? 0) + "%";
+  if (r.prevSame) $("volPrev").textContent = "прошлый " + volFmt(r.prevVol) + " · " +
+    Math.round(r.curVol/r.prevSame*100) + "%";
+  $("volTag").textContent = r.word;
+  $("verdict").textContent = r.verdict;
+
+  const mx = Math.max(...r.buckets.map(b=>b.vol));
+  const n = r.buckets.length;
+  const showVal = n <= 8;
+  const every = Math.ceil(n/8);
+  $("dayBars").innerHTML = r.buckets.map((b,i) => {
+    const h = Math.max(4, b.vol/mx*62);
+    const hot = i === n-1 ? "hot" : "";
+    const nm = r.tf === "month" ? b.key : bucketName(r.tf, b.key, b.sample);
+    const lab = (i % every === 0) ? nm : "";
+    const val = showVal ? volShort(b.vol) : "";
+    return `<div class="b"><span>${val}</span><i class="${hot}" style="height:${h.toFixed(0)}px"></i><span>${lab}</span></div>`;
+  }).join("");
+
+  const lastB = r.buckets[r.buckets.length-1];
+  $("dayNote").textContent = r.complete < r.total
+    ? `${r.complete} из ${r.total} отрезков с базой для сравнения`
+    : `последний отрезок ${volFmt(lastB.vol)} · пик ${volFmt(mx)}`;
+
+  drawSpark(r.cur, r.prof);
+
+  if (r.prof) {
+    const shown = r.prof.keys.filter(k => k >= r.lo - cfg.step && k <= r.hi + cfg.step);
+    const step = Math.max(1, Math.ceil(shown.length/16));
+    const sel = shown.filter((_,i)=> i % step === 0);
+    const mmx = Math.max(...sel.map(k => r.prof.map.get(k)));
+    $("prof").innerHTML = sel.slice().reverse().map(k => {
+      const w = r.prof.map.get(k)/mmx*100;
+      const isPoc = Math.abs(k - r.prof.poc) < 1e-9;
+      return `<div class="pline ${isPoc?"poc":""}"><div class="lb">${f2(k)}</div>
+        <div class="tr"><div class="fl" style="width:${w.toFixed(0)}%"></div></div></div>`;
+    }).join("");
+    $("profNote").textContent = `POC ${f2(r.prof.poc)} · зона 70% ${f2(r.prof.val)} – ${f2(r.prof.vah)}`;
+  }
+
+  $("levels").innerHTML =
+    [["Максимум", r.hi], ["Закрытие", r.c], ["POC", r.prof ? r.prof.poc : r.c], ["Минимум", r.lo]]
+      .map(([k,v]) => `<tr><td>${k}</td><td>${f2(v)}</td></tr>`).join("") +
+    `<tr><td>Позиция в диапазоне</td><td>${r.pos.toFixed(0)}%</td></tr>` +
+    (r.share !== null ? `<tr><td>Объём в верхней трети</td><td>${r.share.toFixed(0)}%</td></tr>` : "") +
+    (r.pshare !== null ? `<tr><td>Было в прошлом периоде</td><td>${r.pshare.toFixed(0)}%</td></tr>` : "");
+}
+
+// ---------------------------------------------------------------- опционы
+let optData = null, optExp = null, optPrice = null;
+
+// ---------- кэш открытого интереса (ROP D весит 22 МБ, грузим раз в час)
+const IDB_NAME = "irida", IDB_STORE = "cache";
+
+function idb(){
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(IDB_NAME, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(IDB_STORE);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+
+async function idbGet(key){
+  try {
+    const db = await idb();
+    return await new Promise((res, rej) => {
+      const tx = db.transaction(IDB_STORE, "readonly").objectStore(IDB_STORE).get(key);
+      tx.onsuccess = () => res(tx.result || null);
+      tx.onerror = () => rej(tx.error);
+    });
+  } catch(e) { return null; }
+}
+
+async function idbSet(key, val){
+  try {
+    const db = await idb();
+    await new Promise((res, rej) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      tx.objectStore(IDB_STORE).put(val, key);
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+    });
+  } catch(e) {}
+}
+
+let oiMap = null;
+
+// агрегация OI по страйку и типу для одной бумаги
+function oiByStrike(store, optCode, since){
+  const M = store.oi;
+  const agg = {};
+  store.rows.forEach(r => {
+    if (r[1] !== optCode || r[4] < since) return;
+    const k = r[2] > 1000 ? r[2] / 100 : r[2];
+    const key = r[4] + "|" + k + "|" + r[3];
+    if (!agg[key]) agg[key] = {date: r[4], k, t: r[3], oi: 0};
+    agg[key].oi += (M[r[0]] || 0);
+  });
+  return Object.values(agg);
+}
+
+async function loadOI(onNote){
+  if (oiMap) return oiMap;
+  const TTL = 3600 * 1000;
+  const cached = await idbGet("ropd_oi");
+  if (cached && Date.now() - cached.ts < TTL && cached.map) {
+    oiMap = cached.map;
+    return oiMap;
+  }
+  if (onNote) onNote("загрузка опционов…");
+
+  // только нужные колонки — 3 МБ вместо 22 МБ
+  const ONLY = Object.values(TICKERS).map(t => t.opt);
+  const [js, jm] = await Promise.all([
+    iss("/iss/engines/futures/markets/options/boards/ROPD/securities.json",
+        {"iss.only": "securities", "iss.meta": "off",
+         "securities.columns": "SECID,ASSETCODE,STRIKE,OPTIONTYPE,LASTTRADEDATE"}),
+    iss("/iss/engines/futures/markets/options/boards/ROPD/securities.json",
+        {"iss.only": "marketdata", "iss.meta": "off",
+         "marketdata.columns": "SECID,OPENPOSITION"}),
+  ]);
+
+  const ci = {};
+  js.securities.columns.forEach((c, i) => ci[c] = i);
+  const rows = [];
+  js.securities.data.forEach(r => {
+    const ac = r[ci.ASSETCODE];
+    if (!ac || !ONLY.includes(ac)) return;
+    const exp = r[ci.LASTTRADEDATE];
+    if (!exp) return;
+    rows.push([r[ci.SECID], ac, +r[ci.STRIKE] || 0, r[ci.OPTIONTYPE], exp]);
+  });
+
+  const M = {};
+  const mi = {};
+  jm.marketdata.columns.forEach((c, i) => mi[c] = i);
+  jm.marketdata.data.forEach(r => {
+    const v = r[mi.OPENPOSITION];
+    if (v) M[r[mi.SECID]] = v;
+  });
+
+  oiMap = { oi: M, rows: rows };
+  idbSet("ropd_oi", {ts: Date.now(), map: oiMap});
+  return oiMap;
+}
+
+async function loadOptions(){
+  $("optStamp").textContent = "загрузка…";
+  try {
+    // цена текущей бумаги — для процентов и диапазона страйков
+    const bars = await candles(cur, "TQBR", "shares", 10, 2);
+    optPrice = bars.length ? +bars[bars.length-1].close : null;
+    if (!optPrice) throw new Error("нет цены по " + cur);
+    const store = await loadOI(msg => { $("optStamp").textContent = msg; });
+    const M = store.oi;
+    const today = new Date().toISOString().slice(0,10);
+    const OPT = (TICKERS[cur] || {}).opt || "SBRF";
+    const rows = store.rows
+      .filter(r => r[1] === OPT && r[4] >= today)
+      .map(r => ({SECID: r[0], ASSETCODE: r[1], STRIKE: r[2], OPTIONTYPE: r[3], LASTTRADEDATE: r[4]}));
+    if (!rows.length) throw new Error("по " + cur + " серий не найдено");
+
+    // по ключу «дата|страйк|тип» может быть несколько серий — суммируем OI
+    const agg = {};
+    rows.forEach(s => {
+      const k = +s.STRIKE > 1000 ? +s.STRIKE/100 : +s.STRIKE;
+      const key = s.LASTTRADEDATE + "|" + k + "|" + s.OPTIONTYPE;
+      if (!agg[key]) agg[key] = {d: s.LASTTRADEDATE, k, t: s.OPTIONTYPE, oi: 0};
+      agg[key].oi += (M[s.SECID] || 0);
+    });
+    const byExp = {};
+    Object.values(agg).forEach(x => {
+      (byExp[x.d] = byExp[x.d] || []).push({k: x.k, t: x.t, oi: x.oi});
+    });
+    optData = byExp;
+    const exps = Object.keys(byExp).sort();
+    optExp = optExp && byExp[optExp] ? optExp : exps[0];
+    $("expTabs").innerHTML = exps.slice(0,2).map(e =>
+      `<button data-exp="${e}" class="${e===optExp?"on":""}">${e.slice(8,10)}.${e.slice(5,7)}</button>`
+    ).join("");
+    $("expTabs").querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+      optExp = b.dataset.exp;
+      $("expTabs").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.exp===optExp));
+      drawOptions();
+    }));
+    document.querySelectorAll("#scr-options .card.plain").forEach(el => el.style.display = "");
+    drawOptions();
+    $("optStamp").textContent = new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}) + " МСК";
+  } catch(e) {
+    const msg = String(e.message || "");
+    $("optStamp").textContent = msg.includes("серий не найдено")
+      ? "нет опционов" : "не удалось загрузить";
+    $("oVerdict").textContent = msg.includes("серий не найдено")
+      ? "По этой бумаге на Мосбирже нет опционов — стены считаются только для бумаг со срочным рынком."
+      : "Данные опционов сейчас недоступны. Попробуйте позже.";
+    $("oPcr").textContent = "—"; $("oMp").textContent = "—";
+    $("expTabs").innerHTML = "";
+    document.querySelectorAll("#scr-options .card.plain").forEach(el => el.style.display = "none");
+    $("oTable") && ($("oTable").innerHTML = "");
+    $("oWalls") && ($("oWalls").innerHTML = "");
+  }
+}
+
+function maxPain(ser){
+  const ks = [...new Set(ser.map(x=>x.k))].sort((a,b)=>a-b);
+  let best = null, bp = Infinity;
+  ks.forEach(k => {
+    let pay = 0;
+    ser.forEach(x => {
+      if (x.t === "C") pay += x.oi * Math.max(0, k - x.k);
+      else pay += x.oi * Math.max(0, x.k - k);
+    });
+    if (pay < bp) { bp = pay; best = k; }
+  });
+  return best;
+}
+
+function drawOptions(){
+  const ser = optData[optExp] || [];
+  const co = ser.filter(x=>x.t==="C").reduce((a,x)=>a+x.oi,0);
+  const po = ser.filter(x=>x.t==="P").reduce((a,x)=>a+x.oi,0);
+  const pcr = co ? po/co : 0;
+  const mp = maxPain(ser);
+
+  $("oPcr").textContent = pcr.toFixed(2);
+  $("oMp").textContent = mp != null ? mp.toFixed(0) : "—";
+
+  const calls = ser.filter(x=>x.t==="C").sort((a,b)=>b.oi-a.oi)[0];
+  const puts  = ser.filter(x=>x.t==="P").sort((a,b)=>b.oi-a.oi)[0];
+
+  let text = "";
+  if (pcr < 0.7) text = "Коллов сильно больше путов — рынок настроен на рост, но это же и риск: при падении коллы начнут закрывать.";
+  else if (pcr > 1.3) text = "Путов больше коллов — участники страхуются, рынок ждёт снижения.";
+  else text = "Стороны примерно уравновешены — выраженного перекоса нет.";
+  if (mp != null) {
+    const d = (mp - optPrice) / optPrice * 100;
+    text += ` Max Pain ${mp.toFixed(0)} — на ${Math.abs(d).toFixed(1)}% ${d>0?"выше":"ниже"} цены.`;
+  }
+  $("oVerdict").textContent = text;
+
+  // страйки в диапазоне ±12% от цены
+  const ks = [...new Set(ser.map(x=>x.k))].filter(k => k >= optPrice*0.84 && k <= optPrice*1.16)
+    .sort((a,b)=>b-a);
+  const mx = Math.max(...ser.map(x=>x.oi), 1);
+  const near = ks.reduce((a,k) => Math.abs(k-optPrice) < Math.abs(a-optPrice) ? k : a, ks[0]);
+
+  $("oTable").innerHTML = ks.map(k => {
+    const c = ser.find(x=>x.k===k && x.t==="C");
+    const p = ser.find(x=>x.k===k && x.t==="P");
+    const cw = c ? c.oi/mx*100 : 0;
+    const pw = p ? p.oi/mx*100 : 0;
+    return `<div class="ostrike ${k===near?"atm":""}">
+      <div class="side p"><i style="width:${pw.toFixed(1)}%"></i></div>
+      <div class="st">${k.toFixed(0)}</div>
+      <div class="side c"><i style="width:${cw.toFixed(1)}%"></i></div>
+    </div>`;
+  }).join("");
+
+  $("oNote").textContent = `call OI ${num(co)} · put OI ${num(po)} · страйков ${ks.length}`;
+
+  $("oWalls").innerHTML =
+    `<tr><td>Стена коллов</td><td>${calls ? calls.k.toFixed(0) : "—"} · ${calls ? num(calls.oi) : ""}</td></tr>` +
+    `<tr><td>Стена путов</td><td>${puts ? puts.k.toFixed(0) : "—"} · ${puts ? num(puts.oi) : ""}</td></tr>` +
+    `<tr><td>Max Pain</td><td>${mp != null ? mp.toFixed(0) : "—"}</td></tr>` +
+    `<tr><td>PCR</td><td>${pcr.toFixed(2)}</td></tr>`;
+}
+
+// ---------------------------------------------------------------- настройки
+const DEF = {tickers:["SBER","GAZP","ROSN","VTBR","T"], mode:"simple", move:2.0, tf:"week"};
+
+function loadSettings(){
+  let s = DEF;
+  try {
+    const raw = localStorage.getItem("irida_cfg");
+    if (raw) s = Object.assign({}, DEF, JSON.parse(raw));
+  } catch(e){}
+  $("setMode").value = s.mode;
+  $("setMove").value = s.move;
+  $("setTf").value = s.tf;
+  document.querySelectorAll("#setTickers button").forEach(b =>
+    b.classList.toggle("on", (s.tickers || []).includes(b.dataset.t)));
+}
+
+
+
+// ---------------------------------------------------------------- сигналы
+function mskNow(){
+  return new Date(Date.now() + 3 * 3600e3);   // МСК от UTC
+}
+function marketOpen(){
+  const d = mskNow();
+  const wd = d.getUTCDay();                    // 0 Вс, 6 Сб
+  if (wd === 0 || wd === 6) return false;
+  const m = d.getUTCHours() * 60 + d.getUTCMinutes();
+  return m >= 7 * 60 && m < 23 * 60 + 50;
+}
+function atrFrom(daily, n = 14){
+  if (daily.length < n + 1) return null;
+  let sum = 0;
+  for (let i = daily.length - n; i < daily.length; i++) {
+    const h = +daily[i].high, l = +daily[i].low, pc = +daily[i - 1].close;
+    sum += Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc));
+  }
+  return sum / n;
+}
+
+async function loadSignals(){
+  $("sigStamp").textContent = "загрузка…";
+  try {
+    const [bars, daily, opts] = await Promise.all([
+      candles(cur, "TQBR", "shares", 10, 5),
+      candles(cur, "TQBR", "shares", 24, 60),
+      loadOI().catch(() => null),
+    ]);
+    if (!bars.length) throw new Error("нет данных");
+    const price = +bars[bars.length - 1].close;
+    const atr = atrFrom(daily);
+
+    // профиль за две последние сессии
+    const days = [...new Set(bars.map(b => b.begin.slice(0, 10)))].slice(-2);
+    const p2 = bars.filter(b => days.includes(b.begin.slice(0, 10)));
+    const prof = profile(p2, 0.25);
+
+    // уровни
+    const lv = [];
+    const add = (v, name, w) => {
+      if (!v) return;
+      lv.push({value: v, name, dist: (price - v) / price * 100, w});
+    };
+    if (prof) { add(prof.poc, "POC", 3); add(prof.vah, "VAH", 2); add(prof.val, "VAL", 2); }
+    if (daily.length >= 200) {
+      const ma = daily.slice(-200).reduce((s, b) => s + +b.close, 0) / 200;
+      add(ma, "MA200", 3);
+    }
+    const today = bars.filter(b => b.begin.slice(0, 10) === bars[bars.length - 1].begin.slice(0, 10));
+    if (today.length) {
+      add(Math.max(...today.map(b => +b.high)), "макс дня", 1);
+      add(Math.min(...today.map(b => +b.low)), "мин дня", 1);
+    }
+    // опционные стены
+    try {
+      const store = opts;
+      if (store && store.rows) {
+        const M = store.oi;
+        const t = new Date().toISOString().slice(0, 10);
+        const OPT = (TICKERS[cur] || {}).opt || "SBRF";
+        // ближайшая серия — как в боте: стены считаются по ней, не по всем срокам
+        const dates = [...new Set(store.rows.filter(r => r[1] === OPT && r[4] >= t).map(r => r[4]))].sort();
+        const near = dates[0];
+        const list = oiByStrike(store, OPT, t).filter(x => x.date === near);
+        const by = {C: [], P: []};
+        list.forEach(x => by[x.t] && by[x.t].push({k: x.k, oi: x.oi}));
+        ["C", "P"].forEach(side => {
+          (by[side] || [])
+            .filter(w => w.oi >= 1000 && w.k >= price * 0.85 && w.k <= price * 1.15)
+            .sort((a, b) => b.oi - a.oi).slice(0, 1).forEach(w => {
+              add(w.k, "стена " + (side === "C" ? "call" : "put"), 3);
+            });
+        });
+      }
+    } catch(e){}
+
+    // объём
+    const vols = today.map(b => +b.volume);
+    const avgV = vols.length ? vols.reduce((a, b) => a + b, 0) / vols.length : 0;
+    const last3 = vols.slice(-3);
+    const lastAvg = last3.length ? last3.reduce((a, b) => a + b, 0) / last3.length : 0;
+    const vRatio = avgV ? lastAvg / avgV : 0;
+    const vTrend = vRatio >= 1.3 ? "растёт" : vRatio <= 0.7 ? "падает" : "обычный";
+
+    // близкие уровни
+    const thr = Math.max(0.35, atr ? atr / price * 100 * 0.5 : 0);
+    const near = lv.filter(x => Math.abs(x.dist) <= thr).sort((a, b) => Math.abs(a.dist) - Math.abs(b.dist));
+    const risk = atr ? atr * 0.5 : null;
+
+    $("sigPrice").textContent = price.toFixed(2);
+    $("sigAtr").textContent = atr ? atr.toFixed(2) + " ₽" : "—";
+    const open = marketOpen();
+    $("sigState").textContent = open
+      ? `Торги идут. Объём ${vTrend} (${vRatio.toFixed(1)}× среднего). Порог близости ${thr.toFixed(2)}%.`
+      : `Биржа закрыта. Сигналы считаются только в торги: будни 07:00–23:50 МСК.`;
+    $("sigState").className = "verdict" + (open ? "" : " muted");
+
+    $("sigList").innerHTML = near.length ? near.map(x => {
+      const up = x.dist < 0;
+      const side = up ? "↑ сопротивление" : "↓ поддержка";
+      let plan = "";
+      if (risk) {
+        const stop = up ? price + risk : price - risk;
+        const cand = lv.filter(y => up ? y.value < price - risk * 0.8 : y.value > price + risk * 0.8);
+        let target = up
+          ? (cand.length ? Math.max(...cand.map(y => y.value)) : price - risk * 2)
+          : (cand.length ? Math.min(...cand.map(y => y.value)) : price + risk * 2);
+        let reward = Math.abs(target - price);
+        if (reward < risk * 0.8 || reward > risk * 3) {
+          target = up ? price - risk * 2 : price + risk * 2;
+          reward = risk * 2;
+        }
+        plan = `<div class="muted" style="margin-top:3px">стоп ${stop.toFixed(2)} · цель ${target.toFixed(2)} · R:R ${(reward / risk).toFixed(1)}</div>`;
+      }
+      return `<div style="padding:9px 0;border-bottom:1px solid var(--line)">
+        <div style="display:flex;justify-content:space-between;gap:8px">
+          <span>${side} ${x.value.toFixed(2)}</span>
+          <span class="muted">${x.dist > 0 ? "+" : ""}${x.dist.toFixed(2)}%</span>
+        </div>
+        <div class="muted" style="margin-top:2px">${x.name}</div>
+        ${plan}
+      </div>`;
+    }).join("") : `<div class="muted">Цена к уровням не подходит</div>`;
+
+    $("sigNote").textContent = `ближайшие две сессии · ${near.length} уровней в радиусе ${thr.toFixed(2)}%`;
+
+    $("sigAll").innerHTML = lv.sort((a, b) => Math.abs(a.dist) - Math.abs(b.dist)).slice(0, 8)
+      .map(x => `<tr><td>${x.value.toFixed(2)}</td><td class="muted">${x.name}</td>
+        <td class="${x.dist > 0 ? "down" : "up"}">${x.dist > 0 ? "+" : ""}${x.dist.toFixed(2)}%</td></tr>`).join("");
+
+    $("sigStamp").textContent = new Date().toLocaleTimeString("ru-RU", {hour: "2-digit", minute: "2-digit"}) + " МСК";
+  } catch(e) {
+    $("sigStamp").textContent = "ошибка: " + e.message;
+  }
+}
+
+// ---------------------------------------------------------------- навигация
+function showScreen(name){
+  ["overview","signals","options","settings"].forEach(s => {
+    $("scr-" + s).hidden = (s !== name);
+  });
+  document.querySelectorAll(".nav button").forEach(b =>
+    b.classList.toggle("on", b.dataset.scr === name));
+  window.scrollTo(0,0);
+  if ($("optTitle")) $("optTitle").textContent = "ОПЦИОНЫ " + cur;
+  if ($("sigTitle")) $("sigTitle").textContent = cur + " · СИГНАЛЫ";
+  if (name === "options" && !optData) loadOptions();
+  if (name === "signals") loadSignals();
+}
+document.querySelectorAll(".nav button").forEach(b =>
+  b.addEventListener("click", () => showScreen(b.dataset.scr)));
+
+// ---------------------------------------------------------------- запуск
+let current = "week";
+
+async function loadFut(){
+  const FUT = (TICKERS[cur] || {}).fut || "SRZ6";
+  try {
+    const wf = await candles(FUT,"RFUD","forts",24,10,"futures");
+    $("fut").textContent = wf.length
+      ? FUT + " " + (+wf[wf.length-1].close).toFixed(0)
+      : FUT + " —";
+  } catch(e) { $("fut").textContent = FUT + " —"; }
+}
+
+async function load(tf, force){
+  current = tf;
+  document.querySelectorAll("#tabs button").forEach(b =>
+    b.classList.toggle("on", b.dataset.tf === tf));
+  $("sub").textContent = "загрузка…";
+  try {
+    const cfg = TF[tf];
+    const key = cur + "-" + cfg.iv + "-" + cfg.days;
+    if (force || !cache[key]) cache[key] = await candles(cur,"TQBR","shares",cfg.iv,cfg.days);
+    render(analyze(tf, cache[key]));
+  } catch (e) {
+    $("sub").textContent = "ошибка: " + e.message;
+  }
+  $("stamp").textContent = new Date().toLocaleTimeString("ru-RU",
+    {hour:"2-digit", minute:"2-digit"}) + " МСК";
+  loadFut();
+}
+
+// переключение бумаги
+document.querySelectorAll("#ttabs button").forEach(b =>
+  b.addEventListener("click", () => {
+    const t = b.dataset.t;
+    if (cur === t) return;
+    cur = t;
+    document.querySelectorAll("#ttabs button").forEach(x =>
+      x.classList.toggle("on", x.dataset.t === cur));
+    Object.keys(cache).forEach(k => delete cache[k]);
+    optData = null;
+    $("optTitle") && ($("optTitle").textContent = "ОПЦИОНЫ " + cur);
+    $("sigTitle") && ($("sigTitle").textContent = cur + " · СИГНАЛЫ");
+    load(current, true);
+    if (!$("scr-signals").hidden) loadSignals();
+    if (!$("scr-options").hidden) loadOptions();
+  }));
+
+$("saveBtn").addEventListener("click", () => {
+  const on = [...document.querySelectorAll("#setTickers button.on")].map(b => b.dataset.t);
+  const cfg = {
+    tickers: on.length ? on : DEF.tickers.slice(),
+    mode: $("setMode").value,
+    move: Math.max(0.3, Math.min(10, +$("setMove").value || DEF.move)),
+    tf: $("setTf").value,
+  };
+  try { localStorage.setItem("irida_cfg", JSON.stringify(cfg)); } catch(e){}
+  applySettings(cfg);
+  $("setNote").textContent = "Сохранено. Вкладки обновлены.";
+});
+
+document.querySelectorAll("#setTickers button").forEach(b =>
+  b.addEventListener("click", () => b.classList.toggle("on")));
+
+function applySettings(cfg){
+  document.querySelectorAll("#ttabs button").forEach(b => {
+    b.style.display = (cfg.tickers || DEF.tickers).includes(b.dataset.t) ? "" : "none";
+  });
+  if (!(cfg.tickers || DEF.tickers).includes(cur)) {
+    cur = (cfg.tickers || DEF.tickers)[0];
+  }
+}
+
+document.querySelectorAll("#tabs button").forEach(b =>
+  b.addEventListener("click", () => {
+    if (current !== b.dataset.tf) {
+      const u = new URL(location.href);
+      u.searchParams.set("tf", b.dataset.tf);
+      try { history.replaceState(null, "", u); } catch(e){}
+      load(b.dataset.tf);
+    }
+  }));
+
+(async () => {
+  loadSettings();
+  try {
+    const raw = localStorage.getItem("irida_cfg");
+    applySettings(raw ? Object.assign({}, DEF, JSON.parse(raw)) : DEF);
+  } catch(e) { applySettings(DEF); }
+
+  // параметры в адресе: ?t=GAZP&tf=day&scr=signals
+  const P = new URLSearchParams(location.search);
+  const tq = P.get("t");
+  if (tq && TICKERS[tq]) {
+    cur = tq;
+    document.querySelectorAll("#ttabs button").forEach(x =>
+      x.classList.toggle("on", x.dataset.t === cur));
+  }
+  const scr = P.get("scr");
+  if (scr) showScreen(scr);
+  const q = P.get("tf");
+  load(q && TF[q] ? q : "week");
+  // ?noreload=1 отключает автообновление (для проверок и скриншотов)
+  if (!P.get("noreload")) {
+    setInterval(() => { if (!$("scr-overview").hidden) load(current, true); }, 180000);
+  }
+})();
+</script>
+</body>
+</html>
