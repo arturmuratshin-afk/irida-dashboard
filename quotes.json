@@ -1,42 +1,42 @@
 {
- "updated": "2026-11-06 01:18",
+ "updated": "2026-11-06 01:28",
  "source": "T-Invest",
  "quotes": {
   "SBER": {
-   "price": 292.79,
-   "time": "2026-11-05 23:17",
+   "price": 292.71,
+   "time": "2026-11-05 23:27",
    "source": "T-Invest",
-   "future": 29766.0,
+   "future": 29767.0,
    "future_code": "SRZ6",
-   "future_time": "2026-11-05 23:17"
+   "future_time": "2026-11-05 23:26"
   },
   "GAZP": {
    "price": 112.55,
-   "time": "2026-11-05 23:17",
+   "time": "2026-11-05 23:27",
    "source": "T-Invest",
-   "future": 11446.0,
+   "future": 11441.0,
    "future_code": "GZZ6",
-   "future_time": "2026-11-05 23:17"
+   "future_time": "2026-11-05 23:27"
   },
   "ROSN": {
-   "price": 362.65,
-   "time": "2026-11-05 23:17",
+   "price": 363.35,
+   "time": "2026-11-05 23:27",
    "source": "T-Invest",
-   "future": 36912.0,
+   "future": 36994.0,
    "future_code": "RNZ6",
-   "future_time": "2026-11-05 23:17"
+   "future_time": "2026-11-05 23:23"
   },
   "VTBR": {
-   "price": 56.45,
-   "time": "2026-11-05 23:17",
+   "price": 56.49,
+   "time": "2026-11-05 23:27",
    "source": "T-Invest",
    "future": null,
    "future_code": "VBZ6",
    "future_time": null
   },
   "T": {
-   "price": 274.18,
-   "time": "2026-11-05 23:17",
+   "price": 274.32,
+   "time": "2026-11-05 23:27",
    "source": "T-Invest",
    "future": null,
    "future_code": "TBZ6",
