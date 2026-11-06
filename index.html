@@ -1295,7 +1295,9 @@ async function load(tf, force){
     render(analyze(tf, bars));
     renderCards();
   } catch (e) {
-    $("sub").textContent = "ошибка: " + e.message;
+    $("sub").textContent = location.protocol === "file:"
+      ? "Открыто из файла: биржа блокирует такие запросы. Откройте панель по ссылке."
+      : "ошибка: " + e.message;
   }
 
   const lv = window.__live;
