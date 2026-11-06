@@ -468,11 +468,11 @@ const BOT = "irida_market_bot";
 // ---------------------------------------------------------------- конфиг
 // коды фьючерсов здесь НЕ хардкодятся: они приходят из quotes.json (future_code)
 const TICKERS = {
-  SBER: {code:"SBER", opt:"SBRF", name:"Сбер"},
-  GAZP: {code:"GAZP", opt:"GAZR", name:"Газпром"},
-  ROSN: {code:"ROSN", opt:"ROSN", name:"Роснефть"},
-  VTBR: {code:"VTBR", opt:"VTBR", name:"ВТБ"},
-  T:    {code:"T",    opt:"T",    name:"Т-Технологии"},
+  SBER: {code:"SBER", opt:"SBRF", name:"Сбер", coeff:1, lot:1},
+  GAZP: {code:"GAZP", opt:"GAZR", name:"Газпром", coeff:1, lot:1},
+  ROSN: {code:"ROSN", opt:"ROSN", name:"Роснефть", coeff:1, lot:1},
+  VTBR: {code:"VTBR", opt:"VTBR", name:"ВТБ", coeff:1, lot:10},
+  T:    {code:"T",    opt:"T",    name:"Т-Технологии", coeff:10, lot:10},
 };
 let cur = "SBER";
 
@@ -819,12 +819,13 @@ async function idbSet(key, val){
 }
 
 let oiMap = null;
-function oiByStrike(store, optCode, since){
+function oiByStrike(store, optCode, since, coeff){
   const M = store.oi;
   const agg = {};
+  const K = coeff || 1;
   store.rows.forEach(r => {
     if (r[1] !== optCode || r[4] < since) return;
-    const k = r[2] > 1000 ? r[2] / 100 : r[2];
+    const k = r[2] / K;
     const key = r[4] + "|" + k + "|" + r[3];
     if (!agg[key]) agg[key] = {date: r[4], k, t: r[3], oi: 0};
     agg[key].oi += (M[r[0]] || 0);
@@ -892,8 +893,9 @@ async function loadOptions(){
     if (!rows.length) throw new Error("по " + cur + " серий не найдено");
 
     const agg = {};
+    const K = (TICKERS[cur] || {}).coeff || 1;
     rows.forEach(s => {
-      const k = +s.STRIKE > 1000 ? +s.STRIKE/100 : +s.STRIKE;
+      const k = +s.STRIKE / K;
       const key = s.LASTTRADEDATE + "|" + k + "|" + s.OPTIONTYPE;
       if (!agg[key]) agg[key] = {d: s.LASTTRADEDATE, k, t: s.OPTIONTYPE, oi: 0};
       agg[key].oi += (M[s.SECID] || 0);
@@ -1108,7 +1110,7 @@ async function loadSignals(){
         const OPT = (TICKERS[cur] || {}).opt || "SBRF";
         const dates = [...new Set(store.rows.filter(r => r[1] === OPT && r[4] >= t).map(r => r[4]))].sort();
         const nearest = dates[0];
-        const list = oiByStrike(store, OPT, t).filter(x => x.date === nearest);
+        const list = oiByStrike(store, OPT, t, (TICKERS[cur] || {}).coeff || 1).filter(x => x.date === nearest);
         const by = {C: [], P: []};
         list.forEach(x => by[x.t] && by[x.t].push({k: x.k, oi: x.oi}));
         ["C", "P"].forEach(side => {
