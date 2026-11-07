@@ -424,6 +424,15 @@
     </div>
   </section>
 
+  <section class="block">
+    <div class="k">Веб-панель</div>
+    <button class="btn" id="panelBtn" style="margin-top:8px">Открыть панель</button>
+    <div class="hint muted" style="margin-top:8px">
+      Полная картина: три слоя, стены, сценарии и проверка вывода.
+      Обновляется каждые 10 минут.
+    </div>
+  </section>
+
   <button class="btn" id="resetBtn">Сбросить настройки</button>
   <div class="note">
     Настройки сохраняются в этом приложении сразу при изменении и
@@ -1348,6 +1357,14 @@ $("setMove").addEventListener("change", e => {
   saveCfg({move: v});
   if (!$("scr-overview").hidden) load(cfg.tf);
 });
+const PANEL_URL = "https://arturmuratshin-afk.github.io/irida-dashboard/panel/";
+$("panelBtn").addEventListener("click", () => {
+  try {
+    if (tg && tg.openLink) { tg.openLink(PANEL_URL); return; }
+  } catch (e) {}
+  window.open(PANEL_URL, "_blank", "noopener");
+});
+
 $("resetBtn").addEventListener("click", () => {
   cfg = Object.assign({}, DEF);
   try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch(e){}
