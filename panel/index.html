@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IRIDA · веб-панель</title>
+<meta name="description" content="IRIDA — аналитическая веб-панель: картина рынка, три слоя, сценарии, проверка выводов. Демо-интерфейс.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='4' fill='%23101B35'/%3E%3Ccircle cx='8' cy='8' r='3.5' fill='%2379C8EA'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ===== сайдбар ===== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <svg width="52" height="34" viewBox="0 0 70 46" fill="none" aria-hidden="true">
+        <path d="M42.7 30.5 A17 17 0 1 1 42.7 13.5" stroke="#C9CFD8" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M28 39 H56" stroke="#C9CFD8" stroke-width="2.4" stroke-linecap="round"/>
+        <circle cx="62.5" cy="39" r="3.4" fill="#79C8EA"/>
+      </svg>
+      <div>
+        <div class="brand-name">IRIDA</div>
+        <div class="brand-sub">WEB</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-group">
+        <div class="nav-title"><span class="dot"></span>Аналитика</div>
+        <a href="#/overview">Картина рынка</a>
+        <a href="#/layers">Три слоя</a>
+        <a href="#/walls">Стены <span class="cmd">/steny</span></a>
+        <a href="#/trend">Тренд <span class="cmd">/trend</span></a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title"><span class="dot"></span>Сценарии</div>
+        <a href="#/scenarios">Сценарии</a>
+        <a href="#/check">Проверка вывода <span class="cmd">/proverka</span></a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title"><span class="dot"></span>Лента</div>
+        <a href="#/news">Новости <span class="cmd">/news</span></a>
+        <a href="#/banks">Банки <span class="cmd">/banki</span></a>
+        <a href="#/itogi">Итоги <span class="cmd">/itogi</span></a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title"><span class="dot dot-gold"></span>Бот и метод</div>
+        <a href="#/ask">Спросить Ириду</a>
+        <a href="#/method">Метод и справки <span class="cmd">/help</span></a>
+      </div>
+    </nav>
+
+    <div class="sidebar-foot">
+      IRIDA · веб-панель<br>
+      <span class="tiny">демо-данные · v0.1</span>
+    </div>
+  </aside>
+
+  <!-- ===== правая колонка ===== -->
+  <div>
+    <header class="topbar">
+      <span class="crumb">Канал <a href="https://t.me/irida_market" target="_blank" rel="noopener">@irida_market</a></span>
+      <span class="spacer"></span>
+      <span class="demo-flag"><span class="dot"></span>демо-данные</span>
+      <a class="btn btn-gold" href="https://t.me/irida_market_bot" target="_blank" rel="noopener">
+        Открыть бота
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 12h14m0 0-6-6m6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </header>
+
+    <main class="main" id="view"><!-- экран рендерится из app.js --></main>
+
+    <footer class="legal-foot" id="legalFoot">
+      <span>IRIDA · информационно-аналитический материал, не является индивидуальной инвестиционной рекомендацией.</span>
+    </footer>
+  </div>
+
+</div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
