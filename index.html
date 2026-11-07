@@ -10,18 +10,19 @@
 <style>
   :root{
     /* палитра: графит + один синий акцент, зелёный/красный только для движения */
-    --bg:#0A0C10;
-    --card:#12161D;
-    --card-2:#171C24;
-    --line:#222A35;
-    --line-soft:#1A212B;
-    --fg:#E9EEF5;
-    --fg-dim:#B9C3D1;
-    --muted:#8792A2;
-    --accent:#5B8CFF;
-    --up:#22C08A;
-    --down:#F0525B;
-    --warn:#F2B33D;
+    /* палитра брендборда ИРИДЫ: navy + голубой канал + золото бота */
+    --bg:#0F1A2E;
+    --card:#152238;
+    --card-2:#1A2942;
+    --line:#344058;
+    --line-soft:#232F45;
+    --fg:#F4F6FA;
+    --fg-dim:#C8D0DC;
+    --muted:#8A93A6;
+    --accent:#5FB7E8;
+    --up:#3FBF8F;
+    --down:#E0575F;
+    --warn:#E8B34B;
 
     /* типографическая шкала из исследования:
        рубрика 20 · тикер 36–48 Bold · тезис 24–32 Medium · текст 16–20 · источник 12–14 */
@@ -56,7 +57,7 @@
     position:sticky; top:0; z-index:6;
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     padding:14px var(--pad) 12px;
-    background:linear-gradient(180deg, var(--bg) 72%, rgba(10,12,16,.86));
+    background:linear-gradient(180deg, var(--bg) 72%, rgba(15,26,46,.86));
     backdrop-filter:blur(10px);
     border-bottom:1px solid var(--line-soft);
   }
@@ -229,7 +230,7 @@
   /* нижняя навигация */
   .nav{
     position:fixed; bottom:0; left:0; right:0; z-index:7;
-    background:rgba(10,12,16,.92); backdrop-filter:blur(16px);
+    background:rgba(15,26,46,.92); backdrop-filter:blur(16px);
     border-top:1px solid var(--line-soft);
     display:flex; max-width:560px; margin:0 auto; padding:9px 8px 14px;
   }
@@ -468,8 +469,8 @@
 const tg = window.Telegram && window.Telegram.WebApp;
 if (tg) {
   tg.ready(); tg.expand();
-  try { tg.setHeaderColor("#0A0C10"); tg.setBackgroundColor("#0A0C10"); } catch(e){}
-  try { tg.setBottomBarColor && tg.setBottomBarColor("#0A0C10"); } catch(e){}
+  try { tg.setHeaderColor("#0F1A2E"); tg.setBackgroundColor("#0F1A2E"); } catch(e){}
+  try { tg.setBottomBarColor && tg.setBottomBarColor("#0F1A2E"); } catch(e){}
 }
 const $ = id => document.getElementById(id);
 const BOT = "irida_market_bot";
@@ -1398,9 +1399,9 @@ $("resetBtn").addEventListener("click", () => {
     try {
       tg.ready();
       tg.expand();
-      tg.setHeaderColor("#0A0C10");
-      tg.setBackgroundColor("#0A0C10");
-      if (tg.setBottomBarColor) tg.setBottomBarColor("#0A0C10");
+      tg.setHeaderColor("#0F1A2E");
+      tg.setBackgroundColor("#0F1A2E");
+      if (tg.setBottomBarColor) tg.setBottomBarColor("#0F1A2E");
     } catch (e) {}
   };
   s.onerror = function () {};
