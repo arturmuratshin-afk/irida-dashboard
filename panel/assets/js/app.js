@@ -250,6 +250,73 @@
       '</div>' + meta() + botbar() + '</div>';
   }
 
+  /* ---------- Прогнозы и участники ---------- */
+
+  function renderForecasts() {
+    const f = D.forecasts || [];
+    const p = D.participants || [];
+
+    const rows = f.map((x) => {
+      const target = x.target ? x.target.toLocaleString('ru-RU') + ' ₽' : '—';
+      const range = (x.low && x.high)
+        ? x.low.toLocaleString('ru-RU') + '–' + x.high.toLocaleString('ru-RU')
+        : '—';
+      const votes = (x.buy || x.hold || x.sell)
+        ? x.buy + ' / ' + x.hold + ' / ' + x.sell
+        : '—';
+      const up = (x.upside === null || x.upside === undefined)
+        ? '—'
+        : (x.upside > 0 ? '+' : '') + String(x.upside).replace('.', ',') + ' %';
+      const rsi = (x.rsi === null || x.rsi === undefined) ? '—' : String(x.rsi).replace('.', ',');
+      return '<tr>' +
+        '<td><b>' + esc(x.code) + '</b></td>' +
+        '<td class="num">' + target + '</td>' +
+        '<td class="num muted">' + range + '</td>' +
+        '<td class="num">' + votes + '</td>' +
+        '<td class="num">' + up + '</td>' +
+        '<td class="num">' + rsi + '</td>' +
+        '<td><span class="pill st-nabludenie">' + esc(x.consensus || '—') + '</span></td>' +
+        '</tr>';
+    }).join('');
+
+    const prows = p.map((x) => {
+      const fiz = (x.fiz_long || 0) - (x.fiz_short || 0);
+      const yur = (x.yur_long || 0) - (x.yur_short || 0);
+      const sign = (v) => (v >= 0 ? '+' : '−') + Math.abs(v).toLocaleString('ru-RU');
+      return '<tr>' +
+        '<td><b>' + esc(x.code) + '</b></td>' +
+        '<td class="num up">' + sign(fiz) + '</td>' +
+        '<td class="num down">' + sign(yur) + '</td>' +
+        '<td class="num muted">' + (x.fiz_num || 0).toLocaleString('ru-RU') + ' / ' +
+          (x.yur_num || 0).toLocaleString('ru-RU') + '</td>' +
+        '<td class="num muted">' + esc(x.date || '—') + '</td>' +
+        '</tr>';
+    }).join('');
+
+    const meta = f.length && f[0].date ? 'данные ' + f[0].date : '';
+
+    return pageHead('Прогнозы', 'Что думают аналитики и участники',
+      'Консенсус инвестдомов и позиции физлиц и юрлиц. Это не рекомендация ИРИДЫ: мы показываем, кто как устроен в бумаге.') +
+      '<div class="card">' + rubric('Консенсус аналитиков') +
+      '<table class="tbl" style="margin-top:10px"><thead><tr>' +
+      '<th>Бумага</th><th>Цель</th><th>Диапазон</th><th>Покуп/держ/прод</th><th>К цене</th><th>RSI</th><th>Итог</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<p class="small muted" style="margin-top:14px">Цель — средний ориентир инвестдомов на 12 месяцев. ' +
+      'RSI-14 считает брокер. Консенсус не означает, что цена туда придёт.</p>' +
+      meta2(meta) + '</div>' +
+      '<div class="card" style="margin-top:16px">' + rubric('Участники фьючерса') +
+      '<table class="tbl" style="margin-top:10px"><thead><tr>' +
+      '<th>Бумага</th><th>Физлица, нетто</th><th>Юрлица, нетто</th><th>Участников физ/юр</th><th>Срез</th>' +
+      '</tr></thead><tbody>' + prows + '</tbody></table>' +
+      '<p class="small muted" style="margin-top:14px">Нетто = лонг минус шорт. Физлица обычно в лонге, юрлица — в шорте: ' +
+      'это структура хеджа, а не прогноз. Данные MOEX с задержкой 14 дней.</p>' +
+      botbar() + '</div>';
+  }
+
+  const meta2 = (note) => note
+    ? '<div class="meta"><span>Данные: T-Invest MCP · ' + esc(note) + '</span></div>'
+    : '';
+
   /* ---------- Стены ---------- */
 
   function renderWalls() {
