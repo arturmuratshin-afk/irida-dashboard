@@ -298,19 +298,65 @@
     return pageHead('Прогнозы', 'Что думают аналитики и участники',
       'Консенсус инвестдомов и позиции физлиц и юрлиц. Это не рекомендация ИРИДЫ: мы показываем, кто как устроен в бумаге.') +
       '<div class="card">' + rubric('Консенсус аналитиков') +
-      '<table class="tbl" style="margin-top:10px"><thead><tr>' +
+      '<div style="overflow-x:auto"><table class="tbl" style="margin-top:10px"><thead><tr>' +
       '<th>Бумага</th><th>Цель</th><th>Диапазон</th><th>Покуп/держ/прод</th><th>К цене</th><th>RSI</th><th>Итог</th>' +
-      '</tr></thead><tbody>' + rows + '</tbody></table>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
       '<p class="small muted" style="margin-top:14px">Цель — средний ориентир инвестдомов на 12 месяцев. ' +
       'RSI-14 считает брокер. Консенсус не означает, что цена туда придёт.</p>' +
       meta2(meta) + '</div>' +
       '<div class="card" style="margin-top:16px">' + rubric('Участники фьючерса') +
-      '<table class="tbl" style="margin-top:10px"><thead><tr>' +
+      '<div style="overflow-x:auto"><table class="tbl" style="margin-top:10px"><thead><tr>' +
       '<th>Бумага</th><th>Физлица, нетто</th><th>Юрлица, нетто</th><th>Участников физ/юр</th><th>Срез</th>' +
-      '</tr></thead><tbody>' + prows + '</tbody></table>' +
+      '</tr></thead><tbody>' + prows + '</tbody></table></div>' +
       '<p class="small muted" style="margin-top:14px">Нетто = лонг минус шорт. Физлица обычно в лонге, юрлица — в шорте: ' +
       'это структура хеджа, а не прогноз. Данные MOEX с задержкой 14 дней.</p>' +
-      botbar() + '</div>';
+      botbar() + '</div>' +
+      renderFlow();
+  }
+
+  function renderFlow() {
+    const f = D.flow || [];
+    if (!f.length) {
+      return '<div class="card" style="margin-top:16px">' + rubric('Давление по сделкам') +
+        '<p class="small muted" style="margin-top:10px">Поток сделок пуст: ' +
+        'он наполняется только в торговые часы.</p></div>';
+    }
+
+    const bar = (series) => series.map((p) => {
+      if (p === null || p === undefined) return '<span class="muted">·</span>';
+      if (p >= 40) return '<span class="up">▲</span>';
+      if (p >= 15) return '<span class="up">△</span>';
+      if (p <= -40) return '<span class="down">▼</span>';
+      if (p <= -15) return '<span class="down">▽</span>';
+      return '<span class="muted">·</span>';
+    }).join('');
+
+    const pct = (v) => {
+      if (v === null || v === undefined) return '<span class="muted">—</span>';
+      const cls = v > 15 ? 'up' : (v < -15 ? 'down' : 'muted');
+      const sign = v > 0 ? '+' : (v < 0 ? '−' : '');
+      return '<span class="' + cls + '">' + sign + Math.abs(Math.round(v)) + ' %</span>';
+    };
+
+    const rows = f.map((x) => '<tr>' +
+      '<td><b>' + esc(x.code) + '</b><br><span class="small muted">' +
+        (x.price || 0).toLocaleString('ru-RU') + ' ₽</span></td>' +
+      '<td class="num">' + pct(x.w5) + '<br><span class="small muted">1м ' +
+        pct(x.w1) + '</span></td>' +
+      '<td><span style="font-size:12px;letter-spacing:0;white-space:nowrap">' +
+        bar(x.series || []) + '</span><br><span class="small muted">' +
+        (x.verdict || '—') + '</span></td>' +
+      '</tr>').join('');
+
+    return '<div class="card" style="margin-top:16px">' + rubric('Давление по сделкам') +
+      '<div style="overflow-x:auto"><table class="tbl" style="margin-top:10px">' +
+      '<thead><tr><th>Бумага</th><th>Дельта 5 мин</th><th>15 минут и вывод</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<p class="small muted" style="margin-top:14px">Дельта — купленные минус проданные лоты, ' +
+      'в процентах от объёма окна. Плюс: перевес покупателей, минус: продавцов. ' +
+      '«Поглощение» — одна сторона давит, а цена стоит: встречные заявки впитывают объём. ' +
+      'Это не прогноз: крупный игрок может давить и для набора, и для выхода.</p>' +
+      '</div>';
   }
 
   const meta2 = (note) => note
@@ -549,6 +595,7 @@
     { path: '/layers',    title: 'Три слоя',       fn: renderLayers },
     { path: '/scenarios', title: 'Сценарии',       fn: renderScenarios },
     { path: '/check',     title: 'Проверка вывода', fn: renderCheck },
+    { path: '/forecasts', title: 'Прогнозы и участники', fn: renderForecasts },
     { path: '/walls',     title: 'Стены',          fn: renderWalls },
     { path: '/trend',     title: 'Тренд',          fn: renderTrend },
     { path: '/news',      title: 'Новости',        fn: renderNews },

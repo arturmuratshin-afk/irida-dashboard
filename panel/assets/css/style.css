@@ -628,8 +628,11 @@ table.tbl tr:last-child td { border-bottom: none; }
 @media (max-width: 900px) {
   /* В мини-приложении MAX и на телефоне окно узкое: сайдбар превращаем
      в одну горизонтальную ленту ссылок, а не в четыре колонки групп. */
-  .shell { grid-template-columns: 1fr; }
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .main { min-width: 0; }
   .sidebar {
+    max-width: 100%;
+    min-width: 0;
     position: sticky;
     top: 0;
     z-index: 30;
