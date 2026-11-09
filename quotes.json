@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-09 06:21",
+ "updated": "2026-11-09 06:31",
  "source": "T-Invest",
  "quotes": {
   "SBER": {
@@ -35,9 +35,9 @@
    "future_time": null
   },
   "T": {
-   "price": null,
-   "time": null,
-   "source": null,
+   "price": 272.06,
+   "time": "19:00:16",
+   "source": "MOEX ISS",
    "future": null,
    "future_code": "TBZ6",
    "future_time": null
