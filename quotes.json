@@ -1,11 +1,11 @@
 {
- "updated": "2026-11-19 00:00",
+ "updated": "2026-11-19 02:55",
  "source": "T-Invest",
  "quotes": {
   "SBER": {
    "price": 297.91,
-   "time": "2026-11-18 23:49",
-   "source": "T-Invest",
+   "time": "23:50:15",
+   "source": "MOEX ISS",
    "future": 30129.0,
    "future_code": "SRZ6",
    "future_time": "2026-11-18 23:49"
