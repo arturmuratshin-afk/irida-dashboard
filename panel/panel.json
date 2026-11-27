@@ -1,8 +1,8 @@
 {
- "asOf": "27 ноября 2026, 20:56 МСК",
+ "asOf": "27 ноября 2026, 21:52 МСК",
  "version": "live 1.0",
  "live": true,
- "build": "2026-11-27 20:56",
+ "build": "2026-11-27 21:52",
  "botUrl": "https://t.me/irida_market_bot",
  "channelUrl": "https://t.me/irida_market",
  "markets": [
@@ -74,11 +74,11 @@
    "link": "https://www.interfax.ru/business/1131933"
   },
   {
-   "time": "19:13",
+   "time": "21:21",
    "tag": "рынок",
-   "title": "Рубль в пятницу умеренно подешевел в паре с юанем перед выходными",
-   "why": "Источник: Интерфакс · ссылка на первоисточник",
-   "link": "https://www.interfax.ru/business/1131930"
+   "title": "СПБ Биржа начнет торги криптовалютами с 1 декабря",
+   "why": "Источник: Коммерсантъ · ссылка на первоисточник",
+   "link": "https://www.kommersant.ru/doc/9144596"
   },
   {
    "time": "20:19",
